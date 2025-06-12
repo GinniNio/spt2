@@ -590,11 +590,18 @@
             try{
                 const res=await fetch(`http://localhost:3001/scrape?url=${encodeURIComponent(urlToScrape)}`);
                 const data=await res.json();
-                alert('Scraped matches:\n'+data.matches.join('\n'));
-                document.getElementById('loading').classList.add('hidden');
+                const matches=Array.isArray(data)?data:data.matches;
+                if(matches&&matches.length){
+                    const framework=new BettingFramework();
+                    const result=framework.analyzeMatches(matches);
+                    displayResults(result);
+                }else{
+                    alert('No matches received.');
+                }
             }catch(e){
-                document.getElementById('loading').classList.add('hidden');
                 alert('Error scraping: '+e.message);
+            }finally{
+                document.getElementById('loading').classList.add('hidden');
             }
         }
     </script>
