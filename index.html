@@ -215,6 +215,12 @@
         }
         .hidden { display: none; }
         option { background: #2a5298; color: white; }
+        .disclaimer {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            margin-top: 40px;
+        }
     </style>
 </head>
 <body>
@@ -318,6 +324,7 @@
             constructor() {
                 this.matches = [];
                 this.parameters = this.getParameters();
+                this.applyAnalysisMode();
                 this.initializeTeamRatings();
             }
             getParameters() {
@@ -332,6 +339,17 @@
                     systemsAllocation: parseFloat(document.getElementById('systemsAllocation').value) / 100,
                     analysisMode: document.getElementById('analysisMode').value
                 };
+            }
+            applyAnalysisMode() {
+                if (this.parameters.analysisMode === 'conservative') {
+                    this.parameters.singlesEV += 0.05;
+                    this.parameters.systemEV += 0.02;
+                    this.parameters.confidence += 0.05;
+                } else if (this.parameters.analysisMode === 'aggressive') {
+                    this.parameters.singlesEV = Math.max(0, this.parameters.singlesEV - 0.05);
+                    this.parameters.systemEV = Math.max(0, this.parameters.systemEV - 0.02);
+                    this.parameters.confidence = Math.max(0, this.parameters.confidence - 0.05);
+                }
             }
             initializeTeamRatings() {
                 this.teamData = {
@@ -550,7 +568,24 @@
                 displayResults(res);
             },500);
         }
-        function loadTodaysMatches(){ runAnalysis(); }
+        function loadTodaysMatches(){
+            document.getElementById('loading').classList.remove('hidden');
+            fetch('matches.json')
+                .then(r => r.json())
+                .then(data => {
+                    const framework = new BettingFramework();
+                    const res = framework.analyzeMatches(data);
+                    document.getElementById('loading').classList.add('hidden');
+                    displayResults(res);
+                })
+                .catch(() => {
+                    document.getElementById('loading').classList.add('hidden');
+                    alert('Could not load matches.');
+                });
+        }
     </script>
+    <footer class="disclaimer">
+        <p>All data is for informational purposes only. Please gamble responsibly.</p>
+    </footer>
 </body>
 </html>
