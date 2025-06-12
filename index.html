@@ -497,12 +497,33 @@
                 systemLegs.sort((a,b)=>b.adjustedEV-a.adjustedEV);
                 return { singles: singles.slice(0,7), systemLegs: systemLegs.slice(0,10) };
             }
+            applyAllocation(selections){
+                const singlesBudget=this.parameters.bankroll*this.parameters.singlesAllocation;
+                const systemsBudget=this.parameters.bankroll*this.parameters.systemsAllocation;
+                const singlesTotal=selections.singles.reduce((s,b)=>s+b.stake,0);
+                if(singlesTotal>singlesBudget){
+                    const f=singlesBudget/singlesTotal;
+                    selections.singles.forEach(b=>{
+                        b.stake*=f;
+                        b.expectedReturn=b.stake*b.odds*b.probability;
+                    });
+                }
+                const systemsTotal=selections.systemLegs.reduce((s,b)=>s+b.stake,0);
+                if(systemsTotal>systemsBudget){
+                    const f=systemsBudget/systemsTotal;
+                    selections.systemLegs.forEach(b=>{
+                        b.stake*=f;
+                        b.expectedReturn=b.stake*b.odds*b.probability;
+                    });
+                }
+                return selections;
+            }
             calculatePortfolioMetrics(selections) {
                 const singlesStake = selections.singles.reduce((sum, b)=>sum+b.stake,0);
-                const systemsStake = selections.systemLegs.reduce((sum,b)=>sum+b.stake*0.01*this.parameters.bankroll,0);
+                const systemsStake = selections.systemLegs.reduce((sum,b)=>sum+b.stake,0);
                 const totalStake = singlesStake + systemsStake;
                 const singlesReturn = selections.singles.reduce((sum,b)=>sum+b.expectedReturn,0);
-                const systemsReturn = selections.systemLegs.reduce((sum,b)=>sum+(b.stake*0.01*this.parameters.bankroll*b.odds*b.probability),0);
+                const systemsReturn = selections.systemLegs.reduce((sum,b)=>sum+(b.stake*b.odds*b.probability),0);
                 const expectedReturn = singlesReturn + systemsReturn;
                 const portfolioEV = totalStake>0 ? (expectedReturn-totalStake)/totalStake : 0;
                 let riskLevel = 'Low';
@@ -512,7 +533,8 @@
             }
             analyzeMatches(matches){
                 const analyses = matches.map(m=>this.analyzeMatch(m));
-                const selections = this.filterSelections(analyses);
+                let selections = this.filterSelections(analyses);
+                selections = this.applyAllocation(selections);
                 const portfolio = this.calculatePortfolioMetrics(selections);
                 return { analyses, selections, portfolio };
             }
