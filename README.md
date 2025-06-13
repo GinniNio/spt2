@@ -4,21 +4,16 @@ This repository contains a demonstration of a data‑driven betting pipeline.
 
 ## Usage
 
-Open `index.html` in a modern browser to experiment with the demo. Use the
-file picker above the **Load Matches** button to select a JSON file containing
-match data. After selecting your file, click **Load Matches** to analyse those
-games.
+Open `index.html` in a modern browser to experiment with the demo. Paste a
+list of matches, odds and markets into the **Paste Matches** field and click
+**Analyze Pasted Matches**. The model parses the text, runs the EV framework
+and displays the recommended selections.
 
-### Web Scraping
+### Comparative Data
 
-This repo includes a small Node server (`server.js`) that provides sample data
-for the web scraping feature. Install dependencies with `npm install` and start
-the server with `npm start`. By default it listens on `http://127.0.0.1:3001`.
-While it runs, click **Fetch Web Matches** in the demo to load the mock data and
-see the analysis pipeline in action.
-
-If the backend isn't running, the page will display a helpful error message with
-instructions on how to start it.
+When analysing matches the demo attempts to query Wikipedia for background
+information on each team. If network access is blocked or the team is not found
+the extra information is simply omitted.
 
 ### Analysis Modes
 

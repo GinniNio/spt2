@@ -280,11 +280,12 @@
                 </div>
             </div>
         </div>
-        <div style="text-align: center; margin-bottom: 30px;">
-            <input type="file" id="matchesFile" accept=".json" style="margin-right:15px;">
-            <button class="btn" onclick="runAnalysis()">🚀 Run Full Analysis</button>
-            <button class="btn" onclick="loadTodaysMatches()" style="background: linear-gradient(45deg, #2196f3, #1976d2); margin-left: 15px;">📅 Load Matches</button>
-            <button class="btn" onclick="fetchMatchesFromWeb()" style="background: linear-gradient(45deg, #ff9800, #f57c00); margin-left: 15px;">🔎 Fetch Web Matches</button>
+        <div class="control-group" style="margin-top:20px;">
+            <h3>📋 Paste Matches</h3>
+            <textarea id="matchesText" rows="10" placeholder="Paste odds table text here" style="width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.3);"></textarea>
+        </div>
+        <div style="text-align: center; margin: 20px 0 30px;">
+            <button class="btn" onclick="runAnalysis()">🚀 Analyze Pasted Matches</button>
         </div>
         <div id="loading" class="loading hidden">
             <div class="spinner"></div>
@@ -612,6 +613,13 @@
                     grid.appendChild(md);
                 }
                 div.appendChild(grid);
+                if(a.homeInfo || a.awayInfo){
+                    const info=document.createElement('div');
+                    info.style.marginTop='10px';
+                    info.style.fontSize='0.85rem';
+                    info.innerHTML=`<strong>${a.match.split(' vs ')[0]}</strong>: ${a.homeInfo || 'N/A'}<br><strong>${a.match.split(' vs ')[1]}</strong>: ${a.awayInfo || 'N/A'}`;
+                    div.appendChild(info);
+                }
                 res.appendChild(div);
             }
             const port=document.getElementById('portfolio');
@@ -623,93 +631,60 @@
             document.getElementById('systemsCount').innerText=result.portfolio.systemsCount;
             document.getElementById('riskLevel').innerText=result.portfolio.riskLevel;
         }
-        function runAnalysis(){
-            document.getElementById('loading').classList.remove('hidden');
-            setTimeout(()=>{
-                const framework=new BettingFramework();
-                const matches=mockMatches();
-                const res=framework.analyzeMatches(matches);
-                document.getElementById('loading').classList.add('hidden');
-                displayResults(res);
-            },500);
-        }
-        function loadTodaysMatches(){
-            const fileInput = document.getElementById('matchesFile');
-            const file = fileInput.files[0];
-            if(!file){
-                alert('Please select a matches JSON file first.');
-                return;
+        function parseMatchesFromText(text){
+            const lines=text.split(/\n/).map(l=>l.trim());
+            const matches=[];
+            for(let i=0;i<lines.length;i++){
+                if(/^\d{1,2}:\d{2}$/.test(lines[i])){
+                    const time=lines[i];
+                    const home=lines[i+1]||'';
+                    const away=lines[i+2]||'';
+                    const oddsLines=[];
+                    let j=i+3;
+                    while(j<lines.length && lines[j]==='') j++;
+                    for(let k=0;k<9 && j<lines.length;k++,j++) oddsLines.push(parseFloat(lines[j]));
+                    if(oddsLines.length===9){
+                        const [homeOdd,drawOdd,awayOdd,homeX,homeAway,drawAway,goals,over,under]=oddsLines;
+                        matches.push({
+                            home, away, time,
+                            odds:{home:homeOdd, draw:drawOdd, away:awayOdd, homeX, homeAway, drawAway, goals, over, under}
+                        });
+                        i=j-1;
+                    }
+                }
             }
-            document.getElementById('loading').classList.remove('hidden');
-            const reader = new FileReader();
-            reader.onload = e => {
-                try{
-                    const data = JSON.parse(e.target.result);
-                    const framework = new BettingFramework();
-                    const res = framework.analyzeMatches(data);
-                    displayResults(res);
-                }catch(err){
-                    alert('Invalid matches file: '+err.message);
-                }finally{
-                    document.getElementById('loading').classList.add('hidden');
-                }
-            };
-            reader.readAsText(file);
+            return matches;
         }
-        async function fetchMatchesFromWeb(){
-            document.getElementById('loading').classList.remove('hidden');
-            try {
-                const res = await fetch('http://127.0.0.1:3001/scrape');
-                const data = await res.json();
-                const scraped = Array.isArray(data) ? data : data.matches;
-                if(scraped && scraped.length){
-                    const matches = scraped.map(m => {
-                        const [home, away] = m.match.split(' vs ');
-                        return {
-                            home: home || '',
-                            away: away || '',
-                            time: m.time || '',
-                            odds: {
-                                home: m.markets['1'],
-                                draw: m.markets['X'],
-                                away: m.markets['2'],
-                                homeX: m.markets['1X'],
-                                homeAway: m.markets['12'],
-                                drawAway: m.markets['X2'],
-                                goals: 2.5,
-                                over: m.markets['Over 2.5'],
-                                under: m.markets['Under 2.5']
-                            }
-                        };
-                    });
-                    const framework = new BettingFramework();
-                    const result = framework.analyzeMatches(matches);
-                    displayResults(result);
-                } else {
-                    alert('No matches received.');
+
+        async function fetchTeamInfo(team){
+            try{
+                const res=await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(team)}`);
+                if(res.ok){
+                    const data=await res.json();
+                    return data.extract || '';
                 }
-            } catch(e) {
-                console.error('Backend connection failed:', e);
-                document.getElementById('results').innerHTML = `
-                    <div style="background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; padding: 20px; border-radius: 12px; text-align: center;">
-                        <h3>🔌 Backend Server Not Running</h3>
-                        <p><strong>Error:</strong> ${e.message}</p>
-                        <div style="margin-top: 15px; font-size: 0.9rem;">
-                            <p><strong>Quick Fix:</strong></p>
-                            <ol style="text-align: left; display: inline-block;">
-                                <li>Open a new terminal in your project folder</li>
-                                <li>Run: <code>npm install</code></li>
-                                <li>Run: <code>npm start</code></li>
-                                <li>Wait for "Server running on port 3001"</li>
-                                <li>Try fetching again</li>
-                            </ol>
-                        </div>
-                        <button onclick="fetchMatchesFromWeb()" style="margin-top: 15px; padding: 10px 20px; background: white; color: #333; border: none; border-radius: 6px; cursor: pointer;">
-                            🔄 Retry Connection
-                        </button>
-                    </div>
-                `;
-            } finally {
+            }catch(e){
+                console.warn('Info fetch failed',e);
+            }
+            return '';
+        }
+
+        async function runAnalysis(){
+            document.getElementById('loading').classList.remove('hidden');
+            try{
+                const text=document.getElementById('matchesText').value;
+                const matches=parseMatchesFromText(text);
+                const framework=new BettingFramework();
+                const result=framework.analyzeMatches(matches);
+                for(const a of result.analyses){
+                    const [homeTeam, awayTeam]=a.match.split(' vs ');
+                    a.homeInfo=await fetchTeamInfo(homeTeam);
+                    a.awayInfo=await fetchTeamInfo(awayTeam);
+                }
+                displayResults(result);
+            }catch(err){
+                alert('Analysis failed: '+err.message);
+            }finally{
                 document.getElementById('loading').classList.add('hidden');
             }
         }
