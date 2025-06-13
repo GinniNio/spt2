@@ -11,6 +11,10 @@ games. If you run a local scraping service at `localhost:3001`, the "Fetch Web
 Matches" button will retrieve live data and display the results using the same
 pipeline.
 
+### Analysis Modes
+
+The drop-down menu lets you choose **Conservative**, **Balanced**, or **Aggressive** analysis. These modes adjust EV thresholds and confidence levels to match your risk appetite.
+
 ## Framework Highlights (May 2025)
 
 - Singles require EV of at least **+10%**, while system legs need **+2%**.
