@@ -7,13 +7,8 @@ This repository contains a demonstration of a data‑driven betting pipeline.
 Open `index.html` in a modern browser to experiment with the demo. Paste a
 list of matches, odds and markets into the **Paste Matches** field and click
 **Analyze Pasted Matches**. The model parses the text, runs the EV framework
-and displays the recommended selections.
-
-### Comparative Data
-
-When analysing matches the demo attempts to query Wikipedia for background
-information on each team. If network access is blocked or the team is not found
-the extra information is simply omitted.
+and displays the recommended selections. The demo runs entirely in your
+browser and does not fetch additional team information from external APIs.
 
 ### Analysis Modes
 
