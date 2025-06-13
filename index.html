@@ -616,22 +616,41 @@
             reader.readAsText(file);
         }
         async function fetchMatchesFromWeb(){
-            const urlToScrape='https://www.example.com/sports';
+            const urlToScrape = 'https://sports.bet9ja.com/';
             document.getElementById('loading').classList.remove('hidden');
-            try{
-                const res=await fetch(`http://localhost:3001/scrape?url=${encodeURIComponent(urlToScrape)}`);
-                const data=await res.json();
-                const matches=Array.isArray(data)?data:data.matches;
-                if(matches&&matches.length){
-                    const framework=new BettingFramework();
-                    const result=framework.analyzeMatches(matches);
+            try {
+                const res = await fetch(`http://localhost:3001/scrape?url=${encodeURIComponent(urlToScrape)}`);
+                const data = await res.json();
+                const scraped = Array.isArray(data) ? data : data.matches;
+                if(scraped && scraped.length){
+                    const matches = scraped.map(m => {
+                        const [home, away] = m.match.split(' vs ');
+                        return {
+                            home: home || '',
+                            away: away || '',
+                            time: m.time || '',
+                            odds: {
+                                home: m.markets['1'],
+                                draw: m.markets['X'],
+                                away: m.markets['2'],
+                                homeX: m.markets['1X'],
+                                homeAway: m.markets['12'],
+                                drawAway: m.markets['X2'],
+                                goals: 2.5,
+                                over: m.markets['Over 2.5'],
+                                under: m.markets['Under 2.5']
+                            }
+                        };
+                    });
+                    const framework = new BettingFramework();
+                    const result = framework.analyzeMatches(matches);
                     displayResults(result);
-                }else{
+                } else {
                     alert('No matches received.');
                 }
-            }catch(e){
-                alert('Error scraping: '+e.message);
-            }finally{
+            } catch(e) {
+                alert('Error scraping: ' + e.message);
+            } finally {
                 document.getElementById('loading').classList.add('hidden');
             }
         }
