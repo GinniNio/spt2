@@ -283,6 +283,10 @@
         <div class="control-group" style="margin-top:20px;">
             <h3>📋 Paste Matches</h3>
             <textarea id="matchesText" rows="10" placeholder="Paste odds table text here" style="width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.3);"></textarea>
+            <div style="margin-top:10px;">
+                <input type="file" id="matchesFile" accept="application/json">
+                <button class="btn" onclick="loadTodaysMatches()" style="margin-left:10px;background:linear-gradient(45deg,#2196f3,#1976d2);">📅 Load Matches</button>
+            </div>
         </div>
         <div style="text-align: center; margin: 20px 0 30px;">
             <button class="btn" onclick="runAnalysis()">🚀 Analyze Pasted Matches</button>
@@ -412,15 +416,19 @@
             }
             calculateOverUnderProbability(totalExpectedGoals, line) {
                 const lambda = totalExpectedGoals;
-                const probUnder = Math.exp(-lambda) * Math.pow(lambda, line) / this.factorial(line);
-                const probOver = 1 - probUnder;
                 if (line % 1 === 0.5) {
-                    const floorLine = Math.floor(line);
-                    const ceilLine = Math.ceil(line);
-                    const probFloor = this.poissonCDF(floorLine, lambda);
-                    return { over: 1 - probFloor, under: probFloor };
+                    const whole = Math.floor(line);
+                    let probUnder = 0;
+                    for(let i=0;i<=whole;i++){
+                        probUnder += Math.exp(-lambda) * Math.pow(lambda, i) / this.factorial(i);
+                    }
+                    return { over: 1 - probUnder, under: probUnder };
                 }
-                return { over: probOver, under: probUnder };
+                let probUnder = 0;
+                for(let i=0;i<=line;i++){
+                    probUnder += Math.exp(-lambda) * Math.pow(lambda, i) / this.factorial(i);
+                }
+                return { over: 1 - probUnder, under: probUnder };
             }
             poissonCDF(k, lambda) {
                 let sum = 0;
@@ -704,6 +712,27 @@
                 displayResults(result);
             }catch(err){
                 alert('Analysis failed: '+err.message);
+            }finally{
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        async function loadTodaysMatches(){
+            const input=document.getElementById('matchesFile');
+            if(!input.files.length){
+                alert('Please select a JSON file with matches');
+                return;
+            }
+            document.getElementById('loading').classList.remove('hidden');
+            try{
+                const text=await input.files[0].text();
+                const matches=JSON.parse(text);
+                const valid=matches.filter(m=>validateMatchData(m).length===0);
+                const framework=new BettingFramework();
+                const result=framework.analyzeMatches(valid);
+                displayResults(result);
+            }catch(err){
+                alert('Failed to load matches: '+err.message);
             }finally{
                 document.getElementById('loading').classList.add('hidden');
             }
