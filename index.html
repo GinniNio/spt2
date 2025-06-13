@@ -467,16 +467,25 @@
                 const stake = Math.max(0, adj * bankroll);
                 return Math.min(stake, bankroll * this.parameters.maxStake);
             }
-            getConfidenceScore(homeTeam, awayTeam, market) {
-                const homeData = this.teamData[homeTeam] || { elo: 1500, form: 0.5 };
-                const awayData = this.teamData[awayTeam] || { elo: 1500, form: 0.5 };
+            getConfidenceScore(homeTeam, awayTeam, marketType) {
+                const homeData = this.teamData[homeTeam] || { elo: 1500, form: 0.5, injuries: 0.05 };
+                const awayData = this.teamData[awayTeam] || { elo: 1500, form: 0.5, injuries: 0.05 };
                 const eloDiff = Math.abs(homeData.elo - awayData.elo);
                 const formStability = Math.min(homeData.form, awayData.form);
-                let base = 0.5 + (eloDiff / 1000) + (formStability * 0.3);
-                if (market === '1X2') base *= 0.9;
-                if (market === 'doubleChance') base *= 1.1;
-                if (market === 'Over' || market === 'Under') base *= 0.95;
-                return Math.min(0.95, Math.max(0.3, base));
+                const injuryImpact = Math.max(homeData.injuries, awayData.injuries);
+                let baseConfidence = 0.5 + (eloDiff / 1500) + (formStability * 0.3) - (injuryImpact * 2);
+                const marketMultipliers = {
+                    "1": 0.95,
+                    "X": 0.85,
+                    "2": 0.95,
+                    "1X": 1.05,
+                    "12": 1.1,
+                    "X2": 1.05,
+                    "Over": 0.9,
+                    "Under": 0.9
+                };
+                baseConfidence *= (marketMultipliers[marketType] || 1.0);
+                return Math.min(0.95, Math.max(0.3, baseConfidence));
             }
             createErrorAnalysis(match, error){
                 return {
