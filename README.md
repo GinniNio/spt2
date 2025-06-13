@@ -4,11 +4,24 @@ This repository contains a demonstration of a data‑driven betting pipeline.
 
 ## Usage
 
-Open `index.html` in a modern browser to experiment with the demo. Paste a
-list of matches, odds and markets into the **Paste Matches** field and click
-**Analyze Pasted Matches**. The model parses the text, runs the EV framework
-and displays the recommended selections. The demo runs entirely in your
-browser and does not fetch additional team information from external APIs.
+Open `index.html` in a modern browser to experiment with the demo.
+You can either paste raw match text, load a JSON file, or fetch games from a
+local scraping server. Use the **Paste Matches** area to enter odds directly
+from a betting site, or select a file with the **Load Matches** button. The
+**Fetch Web Matches** option queries a server running `server.js` and then
+displays the parsed results. The analysis runs entirely in your browser with
+no external team lookups.
+
+### Starting the Scraping Server
+
+Install dependencies and run the server on port 3001:
+
+```bash
+npm install
+npm start
+```
+
+Then open `index.html` and click **Fetch Web Matches**.
 
 ### Analysis Modes
 

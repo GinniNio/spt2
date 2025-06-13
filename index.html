@@ -286,6 +286,7 @@
             <div style="margin-top:10px;">
                 <input type="file" id="matchesFile" accept="application/json">
                 <button class="btn" onclick="loadTodaysMatches()" style="margin-left:10px;background:linear-gradient(45deg,#2196f3,#1976d2);">📅 Load Matches</button>
+                <button class="btn" onclick="fetchMatchesFromWeb()" style="margin-left:10px;background:linear-gradient(45deg,#ff7043,#f4511e);">🔎 Fetch Web Matches</button>
             </div>
         </div>
         <div style="text-align: center; margin: 20px 0 30px;">
@@ -733,6 +734,46 @@
                 displayResults(result);
             }catch(err){
                 alert('Failed to load matches: '+err.message);
+            }finally{
+                document.getElementById('loading').classList.add('hidden');
+            }
+        }
+
+        async function fetchMatchesFromWeb(){
+            const url='http://127.0.0.1:3001/scrape';
+            document.getElementById('loading').classList.remove('hidden');
+            try{
+                const res=await fetch(url);
+                const data=await res.json();
+                if(!data.matches){
+                    throw new Error('No matches returned');
+                }
+                const matches=data.matches.map(m=>{
+                    const [home,away]=m.match.split(' vs ');
+                    const mk=m.markets;
+                    return {
+                        home: home || '',
+                        away: away || '',
+                        time: m.time || '',
+                        odds: {
+                            home: mk['1'],
+                            draw: mk['X'],
+                            away: mk['2'],
+                            homeX: mk['1X'],
+                            homeAway: mk['12'],
+                            drawAway: mk['X2'],
+                            goals: 2.5,
+                            over: mk['Over 2.5'],
+                            under: mk['Under 2.5']
+                        }
+                    };
+                });
+                const valid=matches.filter(m=>validateMatchData(m).length===0);
+                const framework=new BettingFramework();
+                const result=framework.analyzeMatches(valid);
+                displayResults(result);
+            }catch(err){
+                alert('Error fetching matches: '+err.message);
             }finally{
                 document.getElementById('loading').classList.add('hidden');
             }
