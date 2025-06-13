@@ -4,11 +4,12 @@ This repository contains a demonstration of a data‑driven betting pipeline.
 
 ## Usage
 
-Open `index.html` in a modern browser to experiment with the demo. You can
-adjust system parameters or load sample matches from `matches.json`. If you
-run a local scraping service at `localhost:3001`, the "Fetch Web Matches"
-button will retrieve live data, analyse it and display the results using the
-same pipeline.
+Open `index.html` in a modern browser to experiment with the demo. Use the
+file picker above the **Load Matches** button to select a JSON file containing
+match data. After selecting your file, click **Load Matches** to analyse those
+games. If you run a local scraping service at `localhost:3001`, the "Fetch Web
+Matches" button will retrieve live data and display the results using the same
+pipeline.
 
 ## Framework Highlights (May 2025)
 

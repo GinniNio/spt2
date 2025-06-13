@@ -281,8 +281,9 @@
             </div>
         </div>
         <div style="text-align: center; margin-bottom: 30px;">
+            <input type="file" id="matchesFile" accept=".json" style="margin-right:15px;">
             <button class="btn" onclick="runAnalysis()">🚀 Run Full Analysis</button>
-            <button class="btn" onclick="loadTodaysMatches()" style="background: linear-gradient(45deg, #2196f3, #1976d2); margin-left: 15px;">📅 Load Today's Matches</button>
+            <button class="btn" onclick="loadTodaysMatches()" style="background: linear-gradient(45deg, #2196f3, #1976d2); margin-left: 15px;">📅 Load Matches</button>
             <button class="btn" onclick="fetchMatchesFromWeb()" style="background: linear-gradient(45deg, #ff9800, #f57c00); margin-left: 15px;">🔎 Fetch Web Matches</button>
         </div>
         <div id="loading" class="loading hidden">
@@ -592,19 +593,27 @@
             },500);
         }
         function loadTodaysMatches(){
+            const fileInput = document.getElementById('matchesFile');
+            const file = fileInput.files[0];
+            if(!file){
+                alert('Please select a matches JSON file first.');
+                return;
+            }
             document.getElementById('loading').classList.remove('hidden');
-            fetch('matches.json')
-                .then(r => r.json())
-                .then(data => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                try{
+                    const data = JSON.parse(e.target.result);
                     const framework = new BettingFramework();
                     const res = framework.analyzeMatches(data);
-                    document.getElementById('loading').classList.add('hidden');
                     displayResults(res);
-                })
-                .catch(() => {
+                }catch(err){
+                    alert('Invalid matches file: '+err.message);
+                }finally{
                     document.getElementById('loading').classList.add('hidden');
-                    alert('Could not load matches.');
-                });
+                }
+            };
+            reader.readAsText(file);
         }
         async function fetchMatchesFromWeb(){
             const urlToScrape='https://www.example.com/sports';
