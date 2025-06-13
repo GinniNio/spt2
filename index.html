@@ -657,10 +657,9 @@
             reader.readAsText(file);
         }
         async function fetchMatchesFromWeb(){
-            const urlToScrape = 'https://sports.bet9ja.com/';
             document.getElementById('loading').classList.remove('hidden');
             try {
-                const res = await fetch(`http://localhost:3001/scrape?url=${encodeURIComponent(urlToScrape)}`);
+                const res = await fetch('http://127.0.0.1:3001/scrape');
                 const data = await res.json();
                 const scraped = Array.isArray(data) ? data : data.matches;
                 if(scraped && scraped.length){
@@ -690,7 +689,26 @@
                     alert('No matches received.');
                 }
             } catch(e) {
-                alert('Error scraping: ' + e.message);
+                console.error('Backend connection failed:', e);
+                document.getElementById('results').innerHTML = `
+                    <div style="background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+                        <h3>🔌 Backend Server Not Running</h3>
+                        <p><strong>Error:</strong> ${e.message}</p>
+                        <div style="margin-top: 15px; font-size: 0.9rem;">
+                            <p><strong>Quick Fix:</strong></p>
+                            <ol style="text-align: left; display: inline-block;">
+                                <li>Open a new terminal in your project folder</li>
+                                <li>Run: <code>npm install</code></li>
+                                <li>Run: <code>npm start</code></li>
+                                <li>Wait for "Server running on port 3001"</li>
+                                <li>Try fetching again</li>
+                            </ol>
+                        </div>
+                        <button onclick="fetchMatchesFromWeb()" style="margin-top: 15px; padding: 10px 20px; background: white; color: #333; border: none; border-radius: 6px; cursor: pointer;">
+                            🔄 Retry Connection
+                        </button>
+                    </div>
+                `;
             } finally {
                 document.getElementById('loading').classList.add('hidden');
             }
