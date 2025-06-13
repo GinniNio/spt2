@@ -22,6 +22,9 @@ npm start
 ```
 
 Then open `index.html` and click **Fetch Web Matches**.
+The server is configured to return mock data for offline testing.  If you want
+to scrape a real betting site, edit `server.js` to replace the placeholder
+scrape logic with your own and restart the server.
 
 ### Analysis Modes
 
